@@ -3,10 +3,16 @@
 
 #include "TrezorBleLinux.h"
 
-// No platform guard here: CMake only compiles this file on Linux. Guarding it
-// as well would hide the Q_OBJECT class below from moc, which preprocesses the
-// file without the compiler's platform macros defined and would then generate
-// nothing at all, leaving the notification slot silently unconnected.
+// Feather globs its sources, so this file is handed to the compiler on every
+// platform and has to exclude itself.
+//
+// Q_MOC_RUN is part of the condition deliberately. moc preprocesses this file
+// without the compiler's platform macros defined, so a plain __linux__ guard
+// would hide the Q_OBJECT class below from it; moc would then generate nothing,
+// with no diagnostic, and the notification slot would never be connected at run
+// time. moc defines Q_MOC_RUN for itself, so it always sees the class while the
+// compiler still skips the whole file everywhere but Linux.
+#if defined(__linux__) || defined(Q_MOC_RUN)
 
 #include <QDBusArgument>
 #include <QDBusConnection>
@@ -488,3 +494,5 @@ void installTrezorBleLinuxBackend() {
                 return std::make_shared<BluezBleBackend>();
             });
 }
+
+#endif // __linux__ || Q_MOC_RUN

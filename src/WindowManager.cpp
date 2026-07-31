@@ -406,6 +406,29 @@ void WindowManager::tryCreateWalletFromDevice(const QString &path, const QString
         return;
     }
 
+    // Keep something on screen for the whole connection. The wizard closes as
+    // soon as this starts, and reaching a hardware wallet is not quick: over
+    // Bluetooth it means scanning for a device that only advertises while in
+    // pairing mode, then two separate confirmations on the device itself. With
+    // nothing shown, the application simply vanishes for the best part of a
+    // minute and the user has no idea it is waiting on them.
+    const bool overBluetooth = deviceName.contains("ble:");
+    QString message;
+    if (overBluetooth) {
+        message = "Looking for your Trezor over Bluetooth...\n\n"
+                  "Make sure Bluetooth is enabled on the device and that it is in\n"
+                  "pairing mode. This can take up to a minute.\n\n"
+                  "You will be asked to confirm a code on the device, and then to\n"
+                  "enter a second code here.";
+    } else {
+        message = "Connecting to your hardware wallet...\n\n"
+                  "Follow any prompts shown on the device.";
+    }
+    m_splashDialog->setMessage(message);
+    m_splashDialog->setIcon(QPixmap(":/assets/images/key.png"));
+    m_splashDialog->show();
+    m_splashDialog->setEnabled(true);
+
     m_openingWallet = true;
     m_walletManager->createWalletFromDeviceAsync(path, password, constants::networkType, deviceName, restoreHeight, subaddressLookahead);
 }
@@ -464,6 +487,11 @@ void WindowManager::onWalletCreated(Wallet *wallet) {
 // ######################## ERROR HANDLING ########################
 
 void WindowManager::handleWalletError(const Utils::Message &message) {
+    // Any progress dialog belongs to the attempt that just failed, and it is
+    // modal, so it has to go before the error is shown or it sits on top of it.
+    if (m_splashDialog) {
+        m_splashDialog->hide();
+    }
     Utils::showMsg(message);
     this->initWizard();
 }
@@ -626,7 +654,26 @@ void WindowManager::onWalletPassphraseNeeded(bool on_device) {
 void WindowManager::onWalletPairingCodeNeeded() {
     // Reached when a Trezor Safe 7 is paired while *creating* a wallet from the
     // device; the equivalent on an already-open wallet lives in MainWindow.
+    //
+    // The progress dialog is modal, so it has to be stood down before asking for
+    // the code or the prompt appears behind it and the application looks frozen
+    // at the exact moment it needs an answer.
+    if (m_splashDialog) {
+        m_splashDialog->hide();
+    }
+
     const auto code = promptTrezorPairingCode();
+
+    // Put it back up: entering the code is the middle of the connection, not the
+    // end of it, and the handshake continues afterwards.
+    if (m_splashDialog && m_openingWallet) {
+        m_splashDialog->setMessage("Finishing pairing with your Trezor...\n\n"
+                                   "Confirm on the device if it asks.");
+        m_splashDialog->setIcon(QPixmap(":/assets/images/key.png"));
+        m_splashDialog->show();
+        m_splashDialog->setEnabled(true);
+    }
+
     if (code) {
         m_walletManager->onPairingCodeEntered(*code, false);
     } else {
