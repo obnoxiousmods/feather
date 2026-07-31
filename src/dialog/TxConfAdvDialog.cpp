@@ -205,12 +205,23 @@ void TxConfAdvDialog::signedCopy() {
 }
 
 void TxConfAdvDialog::txKeyCopy() {
-    if (m_wallet->isHwBacked()) {
-        Utils::showError(this, "Unable to copy transaction private key", "Function not supported for hardware wallets");
+    if (m_wallet->isHwBacked() && !m_wallet->isTrezor()) {
+        Utils::showError(this, "Unable to copy transaction private key",
+                         "This hardware device does not expose transaction private keys.");
         return;
     }
 
-    Utils::copyToClipboard(m_tx->transaction(0).txKey);
+    // Trezor returns the transaction key when it signs, so this is populated for
+    // a device-backed wallet too. It is only absent if the transaction was not
+    // signed by this wallet, in which case say so rather than copying nothing.
+    const QString txKey = m_tx->transaction(0).txKey;
+    if (txKey.isEmpty()) {
+        Utils::showError(this, "Unable to copy transaction private key",
+                         "The transaction private key is not available for this transaction.");
+        return;
+    }
+
+    Utils::copyToClipboard(txKey);
 }
 
 void TxConfAdvDialog::broadcastTransaction() {

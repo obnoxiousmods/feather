@@ -180,8 +180,13 @@ void TxInfoDialog::copyTxID() {
 }
 
 void TxInfoDialog::copyTxKey() {
-    if (m_wallet->isHwBacked()) {
-        Utils::showError(this, "Unable to get transaction secret key", "Function not supported on hardware device");
+    // Trezor can export transaction secret keys (MoneroGetTxKeyRequest), so do
+    // not refuse outright for every hardware wallet. The device is asked only
+    // for transactions this wallet sent, and reports failure itself if the
+    // firmware is too old, which surfaces as "unknown" below.
+    if (m_wallet->isHwBacked() && !m_wallet->isTrezor()) {
+        Utils::showError(this, "Unable to get transaction secret key",
+                         "This hardware device cannot export transaction secret keys.");
         return;
     }
 
