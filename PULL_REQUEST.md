@@ -176,6 +176,13 @@ These cost the most debugging time and are all documented in the code:
 | Linux | BlueZ over QtDBus | Written, compiles clean, **not tested against hardware** |
 | macOS | CoreBluetooth | Written, **not compiled** — no toolchain was available |
 
+USB is a separate matter and is in better shape. Nothing in the USB or protocol
+path is platform-specific: the only place the operating system is consulted at
+all is the pairing credential's location, and both branches are implemented. USB
+support is therefore complete on every platform by construction — but it has
+only been built and exercised on Windows, which is a weaker claim than "tested
+everywhere" and is not being made here.
+
 The Linux and macOS backends live in Feather rather than in monero, because
 monero's device layer deliberately depends on no particular Bluetooth stack and
 exposes `hw::trezor::ble::set_backend_factory()` for the host application to

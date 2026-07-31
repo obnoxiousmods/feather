@@ -31,10 +31,17 @@ In short:
 
 | | Status |
 |---|---|
-| USB | Works on Windows, Linux and macOS |
+| USB on Windows | Works, tested against a device |
+| USB on Linux and macOS | Should work, but has not been built or tested there |
 | Bluetooth on Windows | Works, tested against a device |
-| Bluetooth on Linux and macOS | Written, not yet tested against a device |
+| Bluetooth on Linux and macOS | Written, not yet built or tested against a device |
 | Older Trezors (One, Model T, Safe 3, Safe 5) | Unaffected, work exactly as before |
+
+Nothing in the USB path is platform-specific — the protocol, the cryptography
+and the framing are ordinary portable C++, and the only place the operating
+system is consulted is where the pairing credential is stored. So USB is
+expected to work everywhere. It simply has not been built or tried anywhere but
+Windows, and that is a different claim.
 
 ### Why it needed changing
 
