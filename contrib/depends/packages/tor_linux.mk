@@ -14,13 +14,7 @@ define $(package)_set_vars
     # that stops the build. Fatal warnings are meant for Tor's own CI rather
     # than for packagers, and turning them on makes the build depend on which
     # glibc the host happens to ship.
-    # Seccomp and libcap are optional, and linking a static Tor against them
-    # needs static builds of both, which most distributions do not ship. They
-    # harden a Tor daemon exposed to the network; the copy bundled here is a
-    # local client Feather starts for itself, so the trade is worth making
-    # rather than requiring static system libraries to build at all.
     $(package)_config_opts+=--with-zlib-dir=$(host_prefix) --disable-tool-name-check
-    $(package)_config_opts+=--disable-seccomp --disable-libcap
     $(package)_config_opts+=--prefix=$(host_prefix)
     $(package)_config_opts_x86_64+=--enable-static-tor
     $(package)_cflags+=-O2
