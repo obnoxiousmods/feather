@@ -78,6 +78,12 @@ $(package)_config_opts += -DQT_FEATURE_securetransport=OFF
 $(package)_config_opts += -DQT_FEATURE_system_proxies=OFF
 $(package)_config_opts += -DQT_FEATURE_use_gold_linker_alias=OFF
 $(package)_config_opts += -DQT_FEATURE_zstd=OFF
+# Turning the feature off does not stop the find_package() call, so on a build
+# host that has zstd installed Qt still imports zstd::libzstd_shared - a shared
+# imported target with no IMPORTED_IMPLIB, which fails the generate step when
+# cross-compiling to Windows. Suppress the lookup itself.
+$(package)_config_opts += -DCMAKE_DISABLE_FIND_PACKAGE_zstd=ON
+$(package)_config_opts += -DCMAKE_DISABLE_FIND_PACKAGE_ZSTD=ON
 $(package)_config_opts += -DQT_FEATURE_pkg_config=ON
 $(package)_config_opts += -DQT_FEATURE_system_png=OFF
 $(package)_config_opts += -DQT_FEATURE_system_pcre2=OFF

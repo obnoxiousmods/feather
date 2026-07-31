@@ -20,6 +20,14 @@ define $(package)_set_vars
   $(package)_config_opts += -DBUILD_OSSFUZZ=OFF
   $(package)_config_opts += -DBUILD_EXAMPLES=OFF
   $(package)_config_opts += -DBUILD_DOC=OFF
+  # Confine find_* to the depends prefix. Otherwise zlib is located on the
+  # build host and /usr/include lands on the compile line alongside the mingw
+  # headers, which collide (conflicting uintptr_t, getcwd, read, chmod...).
+  $(package)_config_opts += -DCMAKE_PREFIX_PATH=$(host_prefix)
+  $(package)_config_opts += -DCMAKE_FIND_ROOT_PATH=$(host_prefix)
+  $(package)_config_opts += -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
+  $(package)_config_opts += -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
+  $(package)_config_opts += -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
 endef
 
 define $(package)_preprocess_cmds

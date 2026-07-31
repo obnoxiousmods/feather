@@ -8,6 +8,15 @@ $(package)_dependencies=abseil
 define $(package)_set_vars
   $(package)_cxxflags+=-std=c++17
   $(package)_config_opts=-Dprotobuf_ABSL_PROVIDER=package
+  # Confine find_package to the depends prefix. Without this, a host-installed
+  # abseil is picked up instead of the one built here; its exported targets are
+  # SHARED IMPORTED, and a shared imported target has no IMPORTED_IMPLIB when
+  # cross-compiling to Windows, so the generate step fails.
+  $(package)_config_opts+=-DCMAKE_PREFIX_PATH=$(host_prefix)
+  $(package)_config_opts+=-DCMAKE_FIND_ROOT_PATH=$(host_prefix)
+  $(package)_config_opts+=-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
+  $(package)_config_opts+=-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
+  $(package)_config_opts+=-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
   $(package)_config_opts+=-Dprotobuf_BUILD_TESTS=OFF
   $(package)_config_opts+=-Dprotobuf_BUILD_SHARED_LIBS=OFF
   $(package)_config_opts+=-Dprotobuf_BUILD_PROTOC_BINARIES=OFF
