@@ -24,6 +24,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 SET(ENV{PKG_CONFIG_PATH} @prefix@/lib/pkgconfig)
+# PKG_CONFIG_PATH only prepends to pkg-config's default search path, so the
+# build host's .pc files stay visible. Anything the depends prefix does not
+# ship a .pc for is then answered with host paths - libusb is one such case,
+# and it put /usr/include on the compile line of a Windows build. LIBDIR
+# replaces the search path outright, which keeps the lookup inside the prefix
+# and lets CMake's own find_path/find_library (already confined by
+# CMAKE_FIND_ROOT_PATH below) resolve the rest.
+SET(ENV{PKG_CONFIG_LIBDIR} @prefix@/lib/pkgconfig)
 
 # use CACHE here because we need to be able to override these later
 SET(TOR_DIR @prefix@/Tor CACHE STRING "Tor dir")
