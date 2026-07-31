@@ -127,7 +127,10 @@ void WalletWizard::onCreateWallet() {
                 deviceName = "Ledger";
                 break;
             case DeviceType::TREZOR:
-                deviceName = "Trezor";
+                // Anything after the colon is a transport path filter, so this
+                // narrows the search to Bluetooth devices instead of picking
+                // whichever Trezor is found first.
+                deviceName = m_wizardFields.useBluetooth ? "Trezor:ble:" : "Trezor";
         }
 
         emit createWalletFromDevice(walletPath, m_wizardFields.password, deviceName, restoreHeight, m_wizardFields.subaddressLookahead);

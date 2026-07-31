@@ -5,7 +5,9 @@
 #include "ui_PageHardwareDevice.h"
 
 #include <QCheckBox>
+#include <QComboBox>
 #include <QDialogButtonBox>
+#include <QVBoxLayout>
 #include <QPushButton>
 
 #include "WalletWizard.h"
@@ -20,7 +22,30 @@ PageHardwareDevice::PageHardwareDevice(WizardFields *fields, QWidget *parent)
     ui->combo_deviceType->addItem("Ledger", DeviceType::LEDGER);
     ui->combo_deviceType->addItem("Trezor", DeviceType::TREZOR);
 
+    // Bluetooth exists only on the Trezor Safe 7, so the option is hidden until
+    // a Trezor is selected rather than being offered where it cannot work.
+    m_checkBluetooth = new QCheckBox("Connect over Bluetooth (Trezor Safe 7)", this);
+    m_checkBluetooth->setToolTip(
+            "Pair with a Trezor Safe 7 over Bluetooth instead of USB.\n"
+            "Enable Bluetooth on the device and put it in pairing mode first.");
+    if (auto *pageLayout = qobject_cast<QVBoxLayout *>(this->layout())) {
+        pageLayout->addWidget(m_checkBluetooth);
+    }
+
+    connect(ui->combo_deviceType, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+            &PageHardwareDevice::onDeviceTypeChanged);
     connect(ui->btnOptions, &QPushButton::clicked, this, &PageHardwareDevice::onOptionsClicked);
+
+    onDeviceTypeChanged();
+}
+
+void PageHardwareDevice::onDeviceTypeChanged() {
+    const auto type = static_cast<DeviceType>(ui->combo_deviceType->currentData().toInt());
+    const bool isTrezor = (type == DeviceType::TREZOR);
+    m_checkBluetooth->setVisible(isTrezor);
+    if (!isTrezor) {
+        m_checkBluetooth->setChecked(false);
+    }
 }
 
 void PageHardwareDevice::initializePage() {
@@ -38,6 +63,7 @@ int PageHardwareDevice::nextId() const {
 bool PageHardwareDevice::validatePage() {
     m_fields->deviceType = static_cast<DeviceType>(ui->combo_deviceType->currentData().toInt());
     m_fields->showSetRestoreHeightPage = ui->radioRestoreWallet->isChecked();
+    m_fields->useBluetooth = m_checkBluetooth->isVisible() && m_checkBluetooth->isChecked();
     return true;
 }
 

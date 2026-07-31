@@ -44,6 +44,9 @@ struct WizardFields {
     Seed::Type seedType;
     DeviceType deviceType;
     QString subaddressLookahead;
+    // Restrict the search to Bluetooth devices. Trezor Safe 7 only; a Trezor
+    // reached over USB is found without any of this.
+    bool useBluetooth = false;
 
     void clearFields() {
         showSetSeedPassphrasePage = false;
@@ -56,6 +59,7 @@ struct WizardFields {
         secretSpendKey = "";
         restoreHeight = 0;
         subaddressLookahead = "";
+        useBluetooth = false;
     }
 
     WizardFields(): deviceType(DeviceType::LEDGER), mode(WizardMode::CreateWallet),

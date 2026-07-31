@@ -4,6 +4,7 @@
 #ifndef FEATHER_PAGEHARDWAREDEVICE_H
 #define FEATHER_PAGEHARDWAREDEVICE_H
 
+#include <QCheckBox>
 #include <QWizardPage>
 
 class WizardFields;
@@ -25,9 +26,12 @@ public:
 
 private:
     void onOptionsClicked();
+    void onDeviceTypeChanged();
 
     Ui::PageHardwareDevice *ui;
     WizardFields *m_fields;
+    // Only meaningful for a Trezor Safe 7, so it is hidden for other devices.
+    QCheckBox *m_checkBluetooth = nullptr;
 };
 
 
