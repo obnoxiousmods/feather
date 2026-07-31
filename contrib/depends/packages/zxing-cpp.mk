@@ -5,6 +5,12 @@ $(package)_file_name=$(package)-$($(package)_version).tar.gz
 $(package)_sha256_hash=c3c02c29c0b519de7bd4e25b376e606e87f0761befd1282815642a2246613d14
 
 define $(package)_set_vars
+  # zxing-cpp builds itself at -Os, which turns on -fdeclone-ctor-dtor. In C++20
+  # mode GCC then emits a reference to the C4 "unified constructor" variant of
+  # std::string's move constructor, and libstdc++ only defines C1 and C2 - so
+  # linking feather fails with an undefined basic_string move constructor.
+  # Decloning is only a size optimisation, so turn it off here.
+  $(package)_cxxflags+=-fno-declone-ctor-dtor
   $(package)_config_opts += -DZXING_WRITERS=OFF
   $(package)_config_opts += -DZXING_EXAMPLES=OFF
   $(package)_config_opts += -DZXING_C_API=OFF
