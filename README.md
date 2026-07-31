@@ -24,7 +24,17 @@ We recommend that you verify downloads with GPG. Releases are signed with our [r
 
 ## Trezor Safe 7 support
 
-Upstream Feather cannot talk to a Trezor Safe 7. This fork can.
+Upstream Feather cannot talk to a Trezor Safe 7. This fork can, over **USB and
+Bluetooth**.
+
+In short:
+
+| | Status |
+|---|---|
+| USB | Works on Windows, Linux and macOS |
+| Bluetooth on Windows | Works, tested against a device |
+| Bluetooth on Linux and macOS | Written, not yet tested against a device |
+| Older Trezors (One, Model T, Safe 3, Safe 5) | Unaffected, work exactly as before |
 
 ### Why it needed changing
 
@@ -56,12 +66,33 @@ A complete THP v2 client in the Monero submodule
 device on connect, so **Trezor One, Model T, Safe 3 and Safe 5 continue to work
 exactly as before**.
 
+### Bluetooth
+
+The Safe 7 is the first Trezor with Bluetooth, and this fork supports it.
+
+To use it, tick **"Connect over Bluetooth (Trezor Safe 7)"** on the hardware
+device page when creating or restoring a wallet, and put the device into
+Bluetooth pairing mode first.
+
+Two things are worth knowing, because both look like faults when they are not:
+
+* **The device is only findable while it is in pairing mode.** It stops
+  advertising otherwise, so Feather cannot see it. Searching can take up to a
+  minute, and Feather shows a dialog explaining what it is waiting for.
+* **You will see two different codes.** The first appears on the Trezor and is
+  Bluetooth's own pairing step — confirm it on the device. The second is the
+  Trezor's pairing code described below, which Feather asks you to type in.
+  Getting two codes is expected.
+
+Bluetooth is used only to reach the device; everything above it — the protocol,
+the pairing, the signing — is identical to USB.
+
 ### Pairing
 
 The first time you connect a Safe 7, the device shows a **six-digit pairing
 code** and Feather prompts you to type it in. This is not a formality: typing
 the code back is what completes the CPace exchange and rules out a
-man-in-the-middle on the USB connection. It cannot be confirmed on the device
+man-in-the-middle on the connection. It cannot be confirmed on the device
 alone the way a passphrase can.
 
 After pairing, Feather stores the resulting credential and reconnects without
@@ -75,10 +106,31 @@ Deleting that file simply means pairing again. It contains no wallet keys.
 
 ### Known limitations
 
-* **USB only.** Bluetooth is a separate subsystem and is not implemented.
+* **Bluetooth is tested on Windows only.** The Linux (BlueZ) and macOS
+  (CoreBluetooth) backends are written but have not yet been run against a
+  device. USB works everywhere.
+* **Reconnecting over Bluetooth may need pairing mode again.** Feather finds
+  devices by listening for them, and a Trezor that is asleep is not
+  advertising. Re-entering pairing mode also makes the device generate a new
+  identity, which invalidates the previous Bluetooth pairing; Feather detects
+  that and pairs again rather than failing.
+* **The device sleeps sooner over Bluetooth than over USB.** On USB it is
+  powered by the cable and never idles. On battery it does.
 * **CodeEntry pairing only.** Production Safe 7 firmware enables no other
   method — `SkipPairing`, `QrCode` and `NFC` are gated behind debug builds
   upstream — so the other methods would be untestable and are not implemented.
+
+### Checking a Bluetooth connection
+
+If a Bluetooth connection is not working, this runs the same code the wallet
+does and reports which step failed, without going through the wizard:
+
+```
+feather --test-ble
+```
+
+It scans, connects, pairs and performs a protocol round trip, printing each
+stage as it reaches it.
 
 ### Building for Windows
 
