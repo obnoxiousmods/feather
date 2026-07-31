@@ -23,3 +23,5 @@ githash.txt
 
 # guix
 /guix
+build-win/
+build-native/
