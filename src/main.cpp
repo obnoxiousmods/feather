@@ -8,6 +8,8 @@
 #include "utils/EventFilter.h"
 #include "WindowManager.h"
 #include "TrezorBleSelfTest.h"
+#include "TrezorBleLinux.h"
+#include "TrezorBleMac.h"
 #include "config.h"
 #include <wallet/api/wallet2_api.h>
 #include "libwalletqt/Wallet.h"
@@ -114,6 +116,15 @@ if (AttachConsole(ATTACH_PARENT_PROCESS)) {
     parser.addOption(testBleOption);
 
     parser.process(app);
+
+    // Install the Bluetooth backend for this platform before anything can
+    // enumerate hardware wallets. Windows brings its own backend along with the
+    // transport; Linux and macOS are supplied by the host application, because
+    // monero's device layer deliberately depends on no particular Bluetooth
+    // stack. Each call is a no-op on the platforms it is not for, and none of
+    // them fail if Bluetooth is simply unavailable.
+    installTrezorBleLinuxBackend();
+    installTrezorBleMacBackend();
 
     if (parser.isSet(testBleOption)) {
         bool ok = false;

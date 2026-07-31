@@ -143,8 +143,42 @@ endif()
 # rapidjson.
 include_directories(${CMAKE_SOURCE_DIR}/monero/external/rapidjson/include)
 
+# The Bluetooth backend for Linux talks to BlueZ over D-Bus. Feather already
+# links Qt, so QtDBus is used rather than pulling libdbus or GLib into the build
+# for one feature. Other platforms compile the file down to an empty stub.
+if(LINUX OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(Qt6 COMPONENTS DBus QUIET)
+    if(Qt6DBus_FOUND)
+        set(FEATHER_BLE_LINUX_SOURCES TrezorBleLinux.cpp)
+        set(FEATHER_BLE_LINUX_LIBRARIES Qt6::DBus)
+        message(STATUS "Trezor: Bluetooth Low Energy enabled (BlueZ over QtDBus)")
+    else()
+        set(FEATHER_BLE_LINUX_SOURCES)
+        set(FEATHER_BLE_LINUX_LIBRARIES)
+        message(STATUS "Trezor: QtDBus not found, Bluetooth Low Energy disabled")
+    endif()
+else()
+    set(FEATHER_BLE_LINUX_SOURCES)
+    set(FEATHER_BLE_LINUX_LIBRARIES)
+endif()
+
+# The macOS backend uses CoreBluetooth, which is an Objective-C framework, so it
+# is compiled as Objective-C++. Elsewhere the file compiles to an empty stub.
+if(APPLE)
+    set(FEATHER_BLE_MAC_SOURCES TrezorBleMac.mm)
+    find_library(COREBLUETOOTH_LIBRARY CoreBluetooth)
+    find_library(FOUNDATION_LIBRARY Foundation)
+    set(FEATHER_BLE_MAC_LIBRARIES ${COREBLUETOOTH_LIBRARY} ${FOUNDATION_LIBRARY})
+    message(STATUS "Trezor: Bluetooth Low Energy enabled (CoreBluetooth)")
+else()
+    set(FEATHER_BLE_MAC_SOURCES)
+    set(FEATHER_BLE_MAC_LIBRARIES)
+endif()
+
 add_executable(feather ${EXECUTABLE_FLAG} main.cpp
         TrezorBleSelfTest.cpp
+        ${FEATHER_BLE_LINUX_SOURCES}
+        ${FEATHER_BLE_MAC_SOURCES}
         ${SOURCE_FILES}
         ${RESOURCES}
         ${ASSETS_TOR}
@@ -269,6 +303,8 @@ if (DEPENDS)
 endif()
 
 target_link_libraries(feather PRIVATE
+    ${FEATHER_BLE_LINUX_LIBRARIES}
+    ${FEATHER_BLE_MAC_LIBRARIES}
         wallet_api
         epee
         easylogging
