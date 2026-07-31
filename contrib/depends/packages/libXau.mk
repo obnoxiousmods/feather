@@ -17,7 +17,8 @@ define $(package)_preprocess_cmds
          -e 's|@ar@|$($(package)_ar)|' \
          -e 's|@strip@|$(host_STRIP)|' \
          -e 's|@arch@|$(host_arch)|' \
-	  toolchain.txt
+	  toolchain.txt && \
+  sed -i -E "s/^(c|cpp) = '([^ ']+) (.+)'/\1 = ['\2', '\3']/" toolchain.txt
 endef
 
 define $(package)_config_cmds
