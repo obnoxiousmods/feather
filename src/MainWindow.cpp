@@ -6,6 +6,7 @@
 
 #include <QFileDialog>
 #include <QInputDialog>
+#include <QRegularExpression>
 #include <QMessageBox>
 #include <QCheckBox>
 
@@ -491,6 +492,7 @@ void MainWindow::initWalletContext() {
     });
     connect(m_wallet, &Wallet::currentSubaddressAccountChanged, this, &MainWindow::updateTitle);
     connect(m_wallet, &Wallet::walletPassphraseNeeded, this, &MainWindow::onWalletPassphraseNeeded);
+    connect(m_wallet, &Wallet::walletPairingCodeNeeded, this, &MainWindow::onWalletPairingCodeNeeded);
 
     connect(m_wallet, &Wallet::unconfirmedMoneyReceived, this, [this](const QString &txId, uint64_t amount){
        if (m_wallet->isSynchronized() && !m_locked) {
@@ -1543,6 +1545,37 @@ void MainWindow::onWalletPassphraseNeeded(bool on_device) {
         m_wallet->onPassphraseEntered(passphrase, false, false);
     } else {
         m_wallet->onPassphraseEntered(passphrase, false, true);
+    }
+}
+
+void MainWindow::onWalletPairingCodeNeeded() {
+    // Devices speaking the Trezor-Host Protocol (Trezor Safe 7 and later) show a
+    // six-digit code on their screen the first time a given host connects. Typing
+    // it back is what rules out a man-in-the-middle on the USB connection, so the
+    // code is entered here rather than on the device.
+    while (true) {
+        bool ok;
+        QString code = QInputDialog::getText(
+                nullptr, "Trezor Pairing Code",
+                "Your Trezor is displaying a six-digit pairing code.\n\n"
+                "Enter it here to finish pairing. This is only needed the first "
+                "time you connect this device to Feather.",
+                QLineEdit::EchoMode::Normal, "", &ok);
+
+        if (!ok) {
+            m_wallet->onPairingCodeEntered("", true);
+            return;
+        }
+
+        code = code.trimmed();
+        static const QRegularExpression sixDigits{QStringLiteral("^[0-9]{6}$")};
+        if (sixDigits.match(code).hasMatch()) {
+            m_wallet->onPairingCodeEntered(code, false);
+            return;
+        }
+
+        QMessageBox::warning(nullptr, "Trezor Pairing Code",
+                             "The pairing code must be exactly six digits.");
     }
 }
 

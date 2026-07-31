@@ -162,6 +162,7 @@ private slots:
     void onDeviceButtonRequest(quint64 code);
     void onDeviceButtonPressed();
     void onWalletPassphraseNeeded(bool on_device);
+    void onWalletPairingCodeNeeded();
     void menuHwDeviceClicked();
     void toggleSearchbar(bool enabled);
     void tryStoreWallet();

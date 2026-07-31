@@ -37,6 +37,9 @@ public:
 
     std::optional<std::string> onDevicePassphraseRequest(bool & on_device) override;
 
+    void onPairingCodeEntered(const QString &code, bool entry_abort);
+    std::optional<std::string> onDevicePairingCodeRequest() override;
+
 private:
     Wallet * m_wallet;
     PassphraseHelper m_phelper;

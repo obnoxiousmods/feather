@@ -32,6 +32,40 @@ std::optional<std::string> PassphraseHelper::onDevicePassphraseRequest(bool & on
     }
 }
 
+std::optional<std::string> PassphraseHelper::onDevicePairingCodeRequest()
+{
+    qDebug() << __FUNCTION__;
+    QMutexLocker locker(&m_mutex_pairing);
+    m_pairing_abort = false;
+
+    if (m_prompter != nullptr){
+        m_prompter->onWalletPairingCodeNeeded();
+    }
+
+    // The device holds the channel open while the user reads the code off its
+    // screen, so this blocks the wallet thread until the UI answers.
+    m_cond_pairing.wait(&m_mutex_pairing);
+
+    if (m_pairing_abort)
+    {
+        throw std::runtime_error("Pairing code entry abort");
+    }
+
+    auto code = m_pairing_code.toStdString();
+    m_pairing_code = QString();
+    return std::optional<std::string>(code);
+}
+
+void PassphraseHelper::onPairingCodeEntered(const QString &code, bool entry_abort)
+{
+    qDebug() << __FUNCTION__;
+    QMutexLocker locker(&m_mutex_pairing);
+    m_pairing_code = code;
+    m_pairing_abort = entry_abort;
+
+    m_cond_pairing.wakeAll();
+}
+
 void PassphraseHelper::onPassphraseEntered(const QString &passphrase, bool enter_on_device, bool entry_abort)
 {
     qDebug() << __FUNCTION__;

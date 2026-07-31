@@ -246,6 +246,10 @@ public:
     void onPassphraseEntered(const QString &passphrase, bool enter_on_device, bool entry_abort=false);
     void onWalletPassphraseNeeded(bool on_device) override;
 
+    // THP pairing code entry (Trezor Safe 7 and later)
+    void onPairingCodeEntered(const QString &code, bool entry_abort=false);
+    void onWalletPairingCodeNeeded() override;
+
     // ##### Import / Export #####
     void setForceKeyImageSync(bool enabled);
     bool hasUnknownKeyImages() const;
@@ -443,6 +447,7 @@ signals:
     void deviceButtonPressed();
     void deviceError(const QString &message, quint64 errorCode);
     void walletPassphraseNeeded(bool onDevice);
+    void walletPairingCodeNeeded();
     void beginCommitTransaction();
     void transactionCommitted(bool status, PendingTransaction *t, const QStringList& txid, const QMap<QString, QString> &txHexMap);
     void deviceShowAddressShowed();
