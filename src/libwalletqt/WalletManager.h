@@ -115,10 +115,17 @@ public:
     void onPassphraseEntered(const QString &passphrase, bool enter_on_device, bool entry_abort=false);
     virtual void onWalletPassphraseNeeded(bool on_device) override;
 
+    // THP pairing code entry (Trezor Safe 7 and later). Needed here as well as
+    // on Wallet, because creating a wallet from a device runs through
+    // WalletManager rather than an already-constructed Wallet.
+    void onPairingCodeEntered(const QString &code, bool entry_abort=false);
+    virtual void onWalletPairingCodeNeeded() override;
+
 signals:
     void walletOpened(Wallet *wallet);
     void walletCreated(Wallet *wallet);
     void walletPassphraseNeeded(bool onDevice);
+    void walletPairingCodeNeeded();
     void deviceButtonRequest(quint64 buttonCode);
     void deviceButtonPressed();
     void deviceError(const QString &message, quint64 errorCode);

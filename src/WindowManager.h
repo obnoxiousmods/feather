@@ -70,6 +70,7 @@ private slots:
     void onDeviceButtonPressed();
     void onDeviceError(const QString &errorMessage, quint64 errorCode);
     void onWalletPassphraseNeeded(bool on_device);
+    void onWalletPairingCodeNeeded();
     void onChangeTheme(const QString &themeName);
 
 private:

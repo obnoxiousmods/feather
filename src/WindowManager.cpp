@@ -15,6 +15,7 @@
 #include "dialog/PasswordDialog.h"
 #include "dialog/SplashDialog.h"
 #include "dialog/TorInfoDialog.h"
+#include "dialog/TrezorPairingDialog.h"
 #include "libwalletqt/WalletManager.h"
 #include "libwalletqt/Wallet.h"
 #include "utils/Icons.h"
@@ -38,6 +39,7 @@ WindowManager::WindowManager(QObject *parent)
     connect(m_walletManager, &WalletManager::deviceButtonPressed, this, &WindowManager::onDeviceButtonPressed);
     connect(m_walletManager, &WalletManager::deviceError,         this, &WindowManager::onDeviceError);
     connect(m_walletManager, &WalletManager::walletPassphraseNeeded, this, &WindowManager::onWalletPassphraseNeeded);
+    connect(m_walletManager, &WalletManager::walletPairingCodeNeeded, this, &WindowManager::onWalletPairingCodeNeeded);
 
     connect(qApp, SIGNAL(anotherInstanceStarted()), this, SLOT(raise()));
     connect(qApp, &QGuiApplication::lastWindowClosed, this, &WindowManager::quitAfterLastWindow);
@@ -619,6 +621,17 @@ void WindowManager::onWalletPassphraseNeeded(bool on_device) {
     bool ok;
     QString passphrase = QInputDialog::getText(nullptr, "Wallet Passphrase Needed", "Enter passphrase:", QLineEdit::EchoMode::Password, "", &ok);
     m_walletManager->onPassphraseEntered(passphrase, false, false);
+}
+
+void WindowManager::onWalletPairingCodeNeeded() {
+    // Reached when a Trezor Safe 7 is paired while *creating* a wallet from the
+    // device; the equivalent on an already-open wallet lives in MainWindow.
+    const auto code = promptTrezorPairingCode();
+    if (code) {
+        m_walletManager->onPairingCodeEntered(*code, false);
+    } else {
+        m_walletManager->onPairingCodeEntered("", true);
+    }
 }
 
 // ######################## TRAY ########################

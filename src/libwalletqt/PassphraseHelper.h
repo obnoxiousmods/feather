@@ -30,6 +30,9 @@ public:
 class PassphraseReceiver {
 public:
     virtual void onPassphraseEntered(const QString &passphrase, bool enter_on_device, bool entry_abort) = 0;
+
+    /** Deliver the THP pairing code the user typed in. */
+    virtual void onPairingCodeEntered(const QString &code, bool entry_abort) { (void)code; (void)entry_abort; }
 };
 
 class PassphraseHelper {
