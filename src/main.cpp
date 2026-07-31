@@ -7,6 +7,7 @@
 #include "constants.h"
 #include "utils/EventFilter.h"
 #include "WindowManager.h"
+#include "TrezorBleSelfTest.h"
 #include "config.h"
 #include <wallet/api/wallet2_api.h>
 #include "libwalletqt/Wallet.h"
@@ -105,7 +106,20 @@ if (AttachConsole(ATTACH_PARENT_PROCESS)) {
     QCommandLineOption testnetOption("testnet", "Testnet is for development purposes only.");
     parser.addOption(testnetOption);
 
+    // Runs the Bluetooth transport the hardware wallet wizard uses and reports
+    // each stage, so a failure to reach a Trezor can be diagnosed without
+    // stepping through the wizard by hand.
+    QCommandLineOption testBleOption(
+            "test-ble", "Test the Trezor Bluetooth connection and exit.", "seconds", "45");
+    parser.addOption(testBleOption);
+
     parser.process(app);
+
+    if (parser.isSet(testBleOption)) {
+        bool ok = false;
+        const int seconds = parser.value(testBleOption).toInt(&ok);
+        return runTrezorBleSelfTest(ok ? seconds : 45);
+    }
 
     if (parser.isSet(versionOption) || parser.isSet(helpOption)) {
         return EXIT_SUCCESS;

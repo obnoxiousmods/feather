@@ -139,7 +139,12 @@ if(MINGW)
     list(APPEND RESOURCES ${ICON_RES})
 endif()
 
+# TrezorBleSelfTest.cpp reaches into the monero transport headers, which pull in
+# rapidjson.
+include_directories(${CMAKE_SOURCE_DIR}/monero/external/rapidjson/include)
+
 add_executable(feather ${EXECUTABLE_FLAG} main.cpp
+        TrezorBleSelfTest.cpp
         ${SOURCE_FILES}
         ${RESOURCES}
         ${ASSETS_TOR}
