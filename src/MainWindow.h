@@ -163,6 +163,7 @@ private slots:
     void onDeviceButtonPressed();
     void onWalletPassphraseNeeded(bool on_device);
     void onWalletPairingCodeNeeded();
+    void onForgetTrezorPairing();
     void menuHwDeviceClicked();
     void toggleSearchbar(bool enabled);
     void tryStoreWallet();

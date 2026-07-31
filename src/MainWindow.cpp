@@ -18,6 +18,8 @@
 #include "dialog/PasswordDialog.h"
 #include "dialog/TxBroadcastDialog.h"
 #include "dialog/TxConfAdvDialog.h"
+#include <wallet/api/wallet2_api.h>
+
 #include "dialog/TrezorPairingDialog.h"
 #include "dialog/TxConfDialog.h"
 #include "dialog/TxImportDialog.h"
@@ -1174,7 +1176,87 @@ void MainWindow::showKeyImageSyncWizard() {
 }
 
 void MainWindow::menuHwDeviceClicked() {
-    Utils::showInfo(this, "Hardware device", QString("This wallet is backed by a %1 hardware device.").arg(this->getHardwareDevice()));
+    // The status bar button used to be a dead end showing a single line of
+    // text; make it the place to actually interact with the device.
+    const bool isTrezor = m_wallet->isTrezor();
+    const bool connected = m_wallet->isDeviceConnected();
+
+    QMenu menu{this};
+    menu.addAction(QString("%1 — %2").arg(this->getHardwareDevice(),
+                                          connected ? "connected" : "not connected"))
+        ->setEnabled(false);
+    menu.addSeparator();
+
+    QAction *showAddress = menu.addAction("Show current address on device");
+    showAddress->setEnabled(connected);
+    showAddress->setToolTip("Display the receive address on the device screen so you can verify "
+                            "it has not been tampered with.");
+
+    QAction *rescan = menu.addAction("Rescan spent outputs");
+    rescan->setEnabled(connected);
+    rescan->setToolTip("Re-check which of your outputs have been spent. Requires the device to "
+                       "re-export key images, so confirm on the device if asked.");
+
+    QAction *reconnect = menu.addAction("Reconnect device");
+    reconnect->setEnabled(!connected);
+
+    QAction *forgetPairing = nullptr;
+    if (isTrezor) {
+        menu.addSeparator();
+        forgetPairing = menu.addAction("Forget device pairing…");
+        forgetPairing->setToolTip("Delete the stored pairing credential. The device will show a "
+                                  "new pairing code the next time it connects.");
+    }
+
+    QAction *chosen = menu.exec(QCursor::pos());
+    if (!chosen) {
+        return;
+    }
+
+    if (chosen == showAddress) {
+        m_wallet->deviceShowAddressAsync(m_wallet->currentSubaddressAccount(), 0, "");
+    }
+    else if (chosen == rescan) {
+        if (m_wallet->rescanSpent()) {
+            m_wallet->startRefresh();
+            Utils::showInfo(this, "Rescan started",
+                            "Feather is re-checking which outputs have been spent.");
+        } else {
+            Utils::showError(this, "Could not rescan spent outputs",
+                             m_wallet->errorString());
+        }
+    }
+    else if (chosen == reconnect) {
+        if (!m_wallet->reconnectDevice()) {
+            Utils::showError(this, "Could not reconnect to the device",
+                             "Reattach the device and make sure it is unlocked.");
+        }
+    }
+    else if (forgetPairing && chosen == forgetPairing) {
+        this->onForgetTrezorPairing();
+    }
+}
+
+void MainWindow::onForgetTrezorPairing() {
+    const auto button = QMessageBox::question(
+            this, "Forget device pairing",
+            "Delete the stored pairing credential for your Trezor?\n\n"
+            "The device will display a new pairing code the next time it connects, and you will "
+            "need to enter it. This does not touch your wallet or your keys.",
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (button != QMessageBox::Yes) {
+        return;
+    }
+
+    if (Monero::forgetTrezorPairings()) {
+        Utils::showInfo(this, "Pairing forgotten",
+                        "The stored pairing credential was deleted. You will be asked for a "
+                        "pairing code the next time this device connects.");
+    } else {
+        Utils::showError(this, "Could not forget the pairing",
+                         QString("Failed to delete %1")
+                                 .arg(QString::fromStdString(Monero::trezorPairingCredentialsPath())));
+    }
 }
 
 void MainWindow::menuOpenClicked() {
